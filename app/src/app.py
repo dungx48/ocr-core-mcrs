@@ -5,7 +5,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette_prometheus import PrometheusMiddleware
 
 from app.src.common.app import app
-from app.src.controller.controller import Controller
+from app.src.controller.text_detection_controller import Controller
 
 app.add_middleware(
     CORSMiddleware,
