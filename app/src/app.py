@@ -5,7 +5,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette_prometheus import PrometheusMiddleware
 
 from app.src.common.app import app
-from app.src.controller.text_detection_controller import Controller
+from app.src.controller.text_detection_controller import router as text_detection_router
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,8 +16,9 @@ app.add_middleware(
 )
 app.add_middleware(PrometheusMiddleware)
 
-kafka_consumer = Controller()
+# text = TextDetectionController()
 
+app.include_router(text_detection_router)
 
 # @app.on_event("startup")
 # def startup_event():

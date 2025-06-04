@@ -15,20 +15,21 @@ from app.src.common.base.structural.base_singleton import Singleton
 
 class KafkaLogging(BaseKafkaProducer, metaclass=Singleton):
     def __init__(self):
-        kafka_log_ip = decouple.config('KAFKA_LOGGING_IP')
-        kafka_log_port = decouple.config('KAFKA_LOGGING_PORT')
-        configs = {'bootstrap.servers': ','.join(
-            [str(ip + ':' + p) for ip, p in zip(kafka_log_ip.split(','), kafka_log_port.split(','))]),
-            'client.id': socket.gethostname(),
-            'reconnect.backoff.ms': 1000,
-            'request.timeout.ms': 5000,
-            'acks': 'all',
-            'retries': 5,
-            'retry.backoff.ms': 1000,
-            'max.in.flight.requests.per.connection': 1,
-            'compression.type': "lz4"
-        }
-        super().__init__(kafka_log_ip, kafka_log_port, configs=configs)
+        pass
+        # kafka_log_ip = decouple.config('KAFKA_LOGGING_IP')
+        # kafka_log_port = decouple.config('KAFKA_LOGGING_PORT')
+        # configs = {'bootstrap.servers': ','.join(
+        #     [str(ip + ':' + p) for ip, p in zip(kafka_log_ip.split(','), kafka_log_port.split(','))]),
+        #     'client.id': socket.gethostname(),
+        #     'reconnect.backoff.ms': 1000,
+        #     'request.timeout.ms': 5000,
+        #     'acks': 'all',
+        #     'retries': 5,
+        #     'retry.backoff.ms': 1000,
+        #     'max.in.flight.requests.per.connection': 1,
+        #     'compression.type': "lz4"
+        # }
+        # super().__init__(kafka_log_ip, kafka_log_port, configs=configs)
 
 
 class InterceptHandler(logging.Handler):
@@ -41,8 +42,8 @@ class InterceptHandler(logging.Handler):
         0: 'NOTSET',
     }
     filter_not_logging = ['DEBUG', 'NOTSET']
-    loggingKafkaProducer = KafkaLogging()
-    print(loggingKafkaProducer.config)
+    # loggingKafkaProducer = KafkaLogging()
+    # print(loggingKafkaProducer.config)
 
     def format_record(self, record):
         args = {}
