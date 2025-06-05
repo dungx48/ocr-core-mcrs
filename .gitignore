@@ -176,5 +176,11 @@ cython_debug/
 /cicd/docker_run.sh
 
 weights/
-
+result/
+data_test/
+*.pyc
+*.swp
+*.pkl
 *.pth
+result*
+weights*
