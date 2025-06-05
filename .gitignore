@@ -174,3 +174,13 @@ cython_debug/
 .pypirc
 
 /cicd/docker_run.sh
+
+weights/
+result/
+data_test/
+*.pyc
+*.swp
+*.pkl
+*.pth
+result*
+weights*
