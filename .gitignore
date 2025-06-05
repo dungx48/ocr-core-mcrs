@@ -176,3 +176,5 @@ cython_debug/
 /cicd/docker_run.sh
 
 weights/
+
+*.pth
