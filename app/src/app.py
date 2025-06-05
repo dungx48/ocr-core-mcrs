@@ -1,11 +1,10 @@
-import logging
 from concurrent.futures.thread import ThreadPoolExecutor
 
 from starlette.middleware.cors import CORSMiddleware
 from starlette_prometheus import PrometheusMiddleware
 
 from app.src.common.app import app
-from app.src.controller.text_detection_controller import router as text_detection_router
+from app.src.controller.text_detection_controller import text_detection_router
 
 app.add_middleware(
     CORSMiddleware,
