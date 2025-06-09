@@ -13,7 +13,7 @@ from src.model.detect_text.craft_test_net import test_net
 from src.dto.response.text_detect_response import TextDetectResponse, Polygon
 
 class TextDetectionService():
-    def __init__(self, trained_model=None, result_folder='./result/'):
+    def __init__(self, trained_model=None, result_folder='./result/detection/'):
         self.cuda = torch.cuda.is_available()
         self.refine_net = None
         self.text_threshold = 0.7
@@ -28,7 +28,8 @@ class TextDetectionService():
         # result_folder
         self.result_folder = result_folder
         if not os.path.isdir(self.result_folder):
-            os.mkdir(self.result_folder)
+            os.makedirs(self.result_folder, exist_ok=True)
+
     
     def compute_confidence_from_heatmap(self, score_text: np.ndarray, poly: np.ndarray) -> float:
         """
