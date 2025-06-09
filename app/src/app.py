@@ -5,6 +5,7 @@ from starlette_prometheus import PrometheusMiddleware
 
 from app.src.common.app import app
 from app.src.controller.text_detection_controller import text_detection_router
+from app.src.controller.text_recognition_cotroller import text_recognition_router
 
 app.add_middleware(
     CORSMiddleware,
@@ -18,6 +19,7 @@ app.add_middleware(PrometheusMiddleware)
 # text = TextDetectionController()
 
 app.include_router(text_detection_router)
+app.include_router(text_recognition_router)
 
 # @app.on_event("startup")
 # def startup_event():
