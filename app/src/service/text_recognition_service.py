@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import List, Optional
 
 import numpy as np
@@ -29,8 +30,10 @@ class TextRecognitionService():
         return self.predictor.predict(pil_img)
 
     def text_recognition_by_vietocr(self, image_path: str) -> TextDetectResponse:
+        logging.info("Starting OCR process")
         # Detect text regions
         detect_resp = self.detector.text_detection_by_craft(image_path)
+        logging.info("Processing OCR Recognition")
         # Load image for recognition
         img = cv2.imread(image_path)
 
@@ -44,59 +47,59 @@ class TextRecognitionService():
                 text=text
             ))
         
-        canvas = self.annotate_full_text_on_blank_canvas(
-            img,
-            enriched, 
-            output_path='fulltext_' + os.path.basename(image_path),
-            font_path='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-            font_size=10
-        )
+        # canvas = self.annotate_full_text_on_blank_canvas(
+        #     img,
+        #     enriched, 
+        #     output_path='fulltext_' + os.path.basename(image_path),
+        #     font_path='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+        #     font_size=10
+        # )
 
         return TextDetectResponse(
             image_name=detect_resp.image_name,
             polys=enriched
         )
 
-    def annotate_full_text_on_blank_canvas(self,
-                                           image_np: np.ndarray,
-                                           polys: List[Polygon],
-                                           output_path: Optional[str] = None,
-                                           font_path: str = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
-                                           font_size: Optional[int] = None
-                                          ) -> np.ndarray:
-        """
-        In full text (Unicode tiếng Việt) của từng bbox lên canvas trắng bên cạnh,
-        theo đúng thứ tự và vị trí y (chuẩn dòng), không cắt chữ.
-        """
-        h, w = image_np.shape[:2]
-        # 1) tạo canvas trắng cùng chiều cao, rộng đủ tối thiểu 2 lần ảnh (đỡ bị cắt)
-        canvas_w = w * 2
-        canvas = np.ones((h, canvas_w, 3), dtype=np.uint8) * 255
-        # 2) đặt ảnh gốc bên trái
-        canvas[:, :w] = image_np
+    # def annotate_full_text_on_blank_canvas(self,
+    #                                        image_np: np.ndarray,
+    #                                        polys: List[Polygon],
+    #                                        output_path: Optional[str] = None,
+    #                                        font_path: str = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+    #                                        font_size: Optional[int] = None
+    #                                       ) -> np.ndarray:
+    #     """
+    #     In full text (Unicode tiếng Việt) của từng bbox lên canvas trắng bên cạnh,
+    #     theo đúng thứ tự và vị trí y (chuẩn dòng), không cắt chữ.
+    #     """
+    #     h, w = image_np.shape[:2]
+    #     # 1) tạo canvas trắng cùng chiều cao, rộng đủ tối thiểu 2 lần ảnh (đỡ bị cắt)
+    #     canvas_w = w * 2
+    #     canvas = np.ones((h, canvas_w, 3), dtype=np.uint8) * 255
+    #     # 2) đặt ảnh gốc bên trái
+    #     canvas[:, :w] = image_np
 
-        # 3) chuyển sang PIL để vẽ Unicode
-        pil = Image.fromarray(cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB))
-        draw = ImageDraw.Draw(pil)
-        size = font_size or max(12, h // 60)
-        try:
-            font = ImageFont.truetype(font_path, size=size)
-        except IOError:
-            raise IOError(f"Không tìm thấy font tại {font_path}.")
+    #     # 3) chuyển sang PIL để vẽ Unicode
+    #     pil = Image.fromarray(cv2.cvtColor(canvas, cv2.COLOR_BGR2RGB))
+    #     draw = ImageDraw.Draw(pil)
+    #     size = font_size or max(12, h // 60)
+    #     try:
+    #         font = ImageFont.truetype(font_path, size=size)
+    #     except IOError:
+    #         raise IOError(f"Không tìm thấy font tại {font_path}.")
 
-        for poly in polys:
-            text = poly.text or ""
-            # tính x, y bắt đầu của dòng dựa trên bbox
-            xs = [pt[0] for pt in poly.points]
-            ys = [pt[1] for pt in poly.points]
-            x0, y0 = min(xs), min(ys)
+    #     for poly in polys:
+    #         text = poly.text or ""
+    #         # tính x, y bắt đầu của dòng dựa trên bbox
+    #         xs = [pt[0] for pt in poly.points]
+    #         ys = [pt[1] for pt in poly.points]
+    #         x0, y0 = min(xs), min(ys)
 
-            # in text full (không cắt) tại (x0 + w, y0)
-            draw.text((x0 + w, y0), text, font=font, fill=(0,0,0))
+    #         # in text full (không cắt) tại (x0 + w, y0)
+    #         draw.text((x0 + w, y0), text, font=font, fill=(0,0,0))
 
-        # 4) convert ngược lại OpenCV BGR
-        canvas = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
+    #     # 4) convert ngược lại OpenCV BGR
+    #     canvas = cv2.cvtColor(np.array(pil), cv2.COLOR_RGB2BGR)
 
-        if output_path:
-            cv2.imwrite(output_path, canvas)
-        return canvas
+    #     if output_path:
+    #         cv2.imwrite(output_path, canvas)
+    #     return canvas

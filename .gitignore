@@ -184,3 +184,7 @@ data_test/
 *.pth
 result*
 weights*
+
+*.jpg
+*.png
+*.pdf

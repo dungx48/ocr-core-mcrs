@@ -15,7 +15,6 @@ from app.src.common.base.structural.base_singleton import Singleton
 
 class KafkaLogging(BaseKafkaProducer, metaclass=Singleton):
     def __init__(self):
-        pass
         # kafka_log_ip = decouple.config('KAFKA_LOGGING_IP')
         # kafka_log_port = decouple.config('KAFKA_LOGGING_PORT')
         # configs = {'bootstrap.servers': ','.join(
@@ -30,6 +29,7 @@ class KafkaLogging(BaseKafkaProducer, metaclass=Singleton):
         #     'compression.type': "lz4"
         # }
         # super().__init__(kafka_log_ip, kafka_log_port, configs=configs)
+        super().__init__()
 
 
 class InterceptHandler(logging.Handler):
@@ -65,34 +65,34 @@ class InterceptHandler(logging.Handler):
         }
         return message
 
-    def logging_to_kafka(self, record):
-        service_name = decouple.config('SERVICE_NAME')
-        message = self.format_record(record)
-        log_message = {
-            "time": message.get('time'),
-            "timestamp": datetime.datetime.now().timestamp(),
-            "status": "on",
-            "dest_ip": "",
-            "log_type": message.get('log_type'),
-            "source_ip": socket.gethostbyname(socket.gethostname()),
-            "level": message.get('level'),
-            "bytes_in": message.get('bytes_in'),
-            "bytes_out": message.get('bytes_out'),
-            "duration": message.get('duration'),
-            "page": message.get('page'),
-            "service_message_id": message.get('service_msg_id'),
-            "full_data": {
-                "log_src": message.get('name'),
-                "message": message.get('message')
-            },
-            "service_name": service_name,
-            "system": "UTILS_PDF_MCRS",
-            "response_code": "OK" if message.get('level') == 'INFO' else 'EUTPDF_COOR_0001',
-            "response_msg": "OK" if message.get('level') == 'INFO' else 'ERROR WHEN PROCESS',
-            "type_system": "DC",
-            "create_date": datetime.datetime.utcfromtimestamp(record.created).isoformat("T") + "Z"
-        }
-        self.loggingKafkaProducer.send(decouple.config('KAFKA_LOGGING_TOPIC'), log_message, flush=False)
+    # def logging_to_kafka(self, record):
+    #     service_name = decouple.config('SERVICE_NAME')
+    #     message = self.format_record(record)
+    #     log_message = {
+    #         "time": message.get('time'),
+    #         "timestamp": datetime.datetime.now().timestamp(),
+    #         "status": "on",
+    #         "dest_ip": "",
+    #         "log_type": message.get('log_type'),
+    #         "source_ip": socket.gethostbyname(socket.gethostname()),
+    #         "level": message.get('level'),
+    #         "bytes_in": message.get('bytes_in'),
+    #         "bytes_out": message.get('bytes_out'),
+    #         "duration": message.get('duration'),
+    #         "page": message.get('page'),
+    #         "service_message_id": message.get('service_msg_id'),
+    #         "full_data": {
+    #             "log_src": message.get('name'),
+    #             "message": message.get('message')
+    #         },
+    #         "service_name": service_name,
+    #         "system": "UTILS_PDF_MCRS",
+    #         "response_code": "OK" if message.get('level') == 'INFO' else 'EUTPDF_COOR_0001',
+    #         "response_msg": "OK" if message.get('level') == 'INFO' else 'ERROR WHEN PROCESS',
+    #         "type_system": "DC",
+    #         "create_date": datetime.datetime.utcfromtimestamp(record.created).isoformat("T") + "Z"
+    #     }
+    #     self.loggingKafkaProducer.send(decouple.config('KAFKA_LOGGING_TOPIC'), log_message, flush=False)
 
     def emit(self, record):
         try:
@@ -115,9 +115,9 @@ class InterceptHandler(logging.Handler):
                 depth=depth,
                 exception=record.exc_info
             ).log(level, record.getMessage())
-        if record.levelname not in self.filter_not_logging:
-            if not (hasattr(record, 'args') and len(record.args) == 5 and record.args[2].endswith('actuator/health')):
-                self.logging_to_kafka(record)
+        # if record.levelname not in self.filter_not_logging:
+        #     if not (hasattr(record, 'args') and len(record.args) == 5 and record.args[2].endswith('actuator/health')):
+        #         self.logging_to_kafka(record)
 
 
 class CustomizeLogger:
