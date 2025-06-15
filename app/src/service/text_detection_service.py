@@ -1,11 +1,12 @@
 import os
-import time
+import logging
 
 import numpy as np
 import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from collections import OrderedDict
+from decouple import config
 
 from src.utils import imgproc, file_utils
 from src.model.detect_text.craft import CRAFT
@@ -13,23 +14,35 @@ from src.model.detect_text.craft_test_net import test_net
 from src.dto.response.text_detect_response import TextDetectResponse, Polygon
 
 class TextDetectionService():
-    def __init__(self, trained_model=None, result_folder='./result/detection/'):
+    def __init__(self, trained_model=None):
         self.cuda = torch.cuda.is_available()
         self.refine_net = None
         self.text_threshold = 0.7
         self.link_threshold = 0.4
         self.low_text = 0.4
         self.poly = False
-        # cuda
-        if trained_model is None:
-            self.trained_model = 'src/weights/craft_mlt_25k.pth'
-        else:
-            self.trained_model = trained_model
+        self.trained_model = trained_model or config('CRAFT_MLT_25K')
         # result_folder
-        self.result_folder = result_folder
-        if not os.path.isdir(self.result_folder):
-            os.makedirs(self.result_folder, exist_ok=True)
+        # self.result_folder = result_folder
+        # if not os.path.isdir(self.result_folder):
+        #     os.makedirs(self.result_folder, exist_ok=True)
+        # Khởi tạo model
+        self.net = self._init_craft_model()
 
+    def _init_craft_model(self):
+        """Khởi tạo và load model CRAFT, trả về model đã load."""
+        print(f'Loading weights from checkpoint ({self.trained_model})')
+        net = CRAFT()
+        if self.cuda:
+            checkpoint = torch.load(self.trained_model)
+            net.load_state_dict(self.copyStateDict(checkpoint))
+            net = net.cuda()
+            net = torch.nn.DataParallel(net)
+            cudnn.benchmark = False
+        else:
+            net.load_state_dict(self.copyStateDict(torch.load(self.trained_model, map_location='cpu')))
+        net.eval()
+        return net
     
     def compute_confidence_from_heatmap(self, score_text: np.ndarray, poly: np.ndarray) -> float:
         """
@@ -62,24 +75,11 @@ class TextDetectionService():
         return float(np.mean(values))
     
     def text_detection_by_craft(self, image_path:str) -> TextDetectResponse:
-        # 1. Khởi tạo model CRAFT
-        net = CRAFT()
-        print('Loading weights from checkpoint (' + self.trained_model + ')')
-        if self.cuda:
-            checkpoint = torch.load(self.trained_model)
-            net.load_state_dict(self.copyStateDict(checkpoint))
-            net = net.cuda()
-            net = torch.nn.DataParallel(net)
-            cudnn.benchmark = False
-        else:
-            net.load_state_dict(self.copyStateDict(torch.load(self.trained_model, map_location='cpu')))
-
-        net.eval()
-        
-        # 2. Đọc ảnh đầu vào (BGR) và inference
+        logging.info("Processing OCR Detection")
+        # Đọc ảnh đầu vào (BGR) và inference
         image = imgproc.loadImage(image_path)
         bboxes_raw, polys, score_text = test_net(
-            net, image,
+            self.net, image,
             self.text_threshold,
             self.link_threshold,
             self.low_text,
@@ -90,14 +90,14 @@ class TextDetectionService():
 
         # 3. Lưu heatmap (score_text) ra file để debug / visualize
         filename, _ = os.path.splitext(os.path.basename(image_path))
-        mask_file = os.path.join(self.result_folder, f"res_{filename}_mask.jpg")
-        cv2.imwrite(mask_file, score_text)
+        # mask_file = os.path.join(self.result_folder, f"res_{filename}_mask.jpg")
+        # cv2.imwrite(mask_file, score_text)
 
         # 4. Lưu kết quả polygon (vẽ lên ảnh + xuất .txt) vào thư mục result
         #    file_utils.saveResult sẽ tạo:
         #      - res_{filename}.jpg (vẽ polygon / bbox)
         #      - res_{filename}.txt (mỗi dòng “x1,y1,x2,y2,x3,y3,x4,y4”)
-        file_utils.saveResult(image_path, image[:, :, ::-1], polys, dirname=self.result_folder)
+        # file_utils.saveResult(image_path, image[:, :, ::-1], polys, dirname=self.result_folder)
 
         # 5. Tạo danh sách các Polygon (theo model Pydantic) để trả về
         polys_list: list[Polygon] = []
